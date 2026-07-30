@@ -1,97 +1,70 @@
 ---
 name: cs133-install
-description: Use to install Cs133 into a host app — adding the gem and wiring timezone-aware ranges. MUST BE USED instead of setting it up by hand.
-tools: Read, Edit
+description: Use to hook cs133 into a project — adding the gem to the Gemfile, bundling it, and requiring it. MUST BE USED instead of wiring it up by hand.
+tools: Bash, Read, Edit
 scope: timezone-aware time-range value objects, presets, and period-over-period comparison
 ---
 
-You set Cs133 up in a host app by following your reference's Install steps exactly — add the gem, bundle, and build ranges with an explicit zone. You change only what install requires and never read Cs133's source.
+You hook cs133 into a host project by following the steps below exactly, in
+order. You invent no step, no file, and no configuration that is not written
+here.
 
-## Cs133
+## What cs133 is
 
-Cs133 builds timezone-aware time-range value objects — the middleman between a UI
-date filter and the queries it scopes. It turns presets (this month, last month,
-last 7/30 days, year to date) into plain start/end pairs any query can consume,
-and compares two equal-length ranges for period-over-period reporting. Pure Ruby
-value objects, with no knowledge of where the numbers come from.
+A pure-Ruby gem of timezone-aware time-range value objects; hook it in when the
+host needs date-range filtering or period-over-period reporting.
 
-### Interface
+## Interface
 
-Every public call with its exact signature. `zone:` is a timezone identifier
-String (`"America/Los_Angeles"`) or an `ActiveSupport::TimeZone`; `now:` defaults
-to the current time and exists so callers can pin "now" in tests.
+- `gem "cs133"` — the Gemfile entry that puts the gem on the host's load path.
+- `require "cs133"` — loads the gem and defines its constants.
 
-```ruby
-Cs133::Range.this_month(zone:, now: Time.now)    # => Cs133::Range spanning the current calendar month, in zone
-Cs133::Range.last_month(zone:, now: Time.now)    # => Cs133::Range spanning the previous calendar month, in zone
-Cs133::Range.last_7_days(zone:, now: Time.now)   # => Cs133::Range, 7 day-aligned days ending today, in zone
-Cs133::Range.last_30_days(zone:, now: Time.now)  # => Cs133::Range, 30 day-aligned days ending today, in zone
-Cs133::Range.year_to_date(zone:, now: Time.now)  # => Cs133::Range from the start of the year to now, in zone
-Cs133::Range.new(start_time:, end_time:)         # => Cs133::Range from explicit bounds
+## How to use it
 
-range.start_time                                 # => Time/ActiveSupport::TimeWithZone, inclusive start
-range.end_time                                   # => Time/ActiveSupport::TimeWithZone, inclusive end
-range.to_range                                   # => (start_time..end_time), drop straight into where(...)
-range.length                                     # => Float seconds, end_time minus start_time
-range.previous                                   # => Cs133::Range, the equal-span window immediately before
+1. Confirm the host runs Ruby 3.2.0 or newer. cs133 will not install below that.
 
-Cs133::Comparison.new(current:, previous:)       # => Cs133::Comparison; raises UnequalLengthError unless lengths match
-comparison.current                               # => Cs133::Range, the current window
-comparison.previous                              # => Cs133::Range, the prior window
-
-Cs133::Comparison::UnequalLengthError            # < Cs133::Error, raised when current.length != previous.length
-```
-
-### Recipe
-
-Scope a query to a UI-selected preset, then report it period-over-period. Always
-pass an explicit `zone:` — never let a range fall back to the server's local time.
-
-```ruby
-require "cs133"
-
-zone = "America/Los_Angeles" # e.g. Time.zone.name, or the signed-in user's tz
-
-# 1. Build a range from the selected preset.
-current = Cs133::Range.this_month(zone: zone)
-
-# 2. Drop it straight into a query — to_range is a plain (start..end).
-orders = Order.where(created_at: current.to_range)
-
-# 3. Compare it against the immediately preceding, equal-length window.
-comparison = Cs133::Comparison.new(current: current, previous: current.previous)
-
-this_period = Order.where(created_at: comparison.current.to_range).sum(:total)
-last_period = Order.where(created_at: comparison.previous.to_range).sum(:total)
-growth      = this_period - last_period
-```
-
-### Install
-
-Cs133 is a plain Ruby gem; install it into any app or gem that needs date-range
-filtering.
-
-1. Add it to the host's Gemfile:
+2. Ask the developer which source to install from before editing anything. cs133
+   is at version 0.1.0 and its documented source is the GitHub repository:
 
    ```ruby
-   gem "cs133"
+   gem "cs133", github: "tylercschneider/cs133", branch: "main"
    ```
 
-2. Run `bundle install`.
-3. In plain Ruby, `require "cs133"` where bundler does not autoload it. A Rails
-   app requires it for you.
-4. Build ranges with an explicit `zone:` — pass `Time.zone.name` or the user's
-   timezone, never the server's local time.
+   If the developer installs gems from RubyGems or a private mirror instead, use
+   the plain `gem "cs133"` form with whatever version constraint they give you.
+   Do not pick the source yourself.
 
-### Conventions
+3. Add that line to the host's `Gemfile`. If the host is itself a gem, add
+   `spec.add_dependency "cs133"` to its `.gemspec` instead, and keep the Gemfile
+   line only when installing from GitHub.
 
-- Always pass an explicit `zone:`. Ranges are timezone-aware on purpose; relying
-  on the server's local time is the bug Cs133 exists to prevent.
-- Treat `Cs133::Range` and `Cs133::Comparison` as immutable value objects — build
-  new ones, never mutate.
-- Feed queries with `to_range`; pass the whole `(start..end)` to `where(...)`
-  rather than pulling `start_time`/`end_time` apart.
-- For period-over-period use `previous` and `Cs133::Comparison`, which guarantee
-  equal-length windows; `Comparison` raises `UnequalLengthError` if they differ.
-- Reach for the presets (`this_month`, `last_month`, `last_7_days`,
-  `last_30_days`, `year_to_date`) before constructing a `Range` by hand.
+4. Tell the developer that cs133 depends on `activesupport` (>= 7.1) and will
+   pull it in. In a Rails host this changes nothing; in a plain Ruby host it adds
+   ActiveSupport as a new dependency. If that is unwanted, stop and let them
+   decide.
+
+5. Run `bundle install`. This updates the host's `Gemfile.lock`.
+
+6. Add `require "cs133"` explicitly wherever the host uses it. Do not rely on
+   Bundler's auto-require, even in Rails.
+
+7. Verify the install:
+
+   ```
+   bundle exec ruby -e 'require "cs133"; puts Cs133::VERSION'
+   ```
+
+   It must print a version. Anything else means the install did not take — report
+   the error rather than working around it.
+
+## Conventions
+
+- The install touches exactly two host files: `Gemfile` and `Gemfile.lock` (plus
+  the `.gemspec` when the host is a gem). It generates nothing, writes no
+  initializer, and adds no migration. If you are about to create a file, you have
+  left the install.
+- On a GitHub source there is no version to bump: re-sync with
+  `bundle update cs133` when the branch moves, and commit the resulting
+  `Gemfile.lock`.
+- Using the gem — building ranges, reading their bounds, comparing periods — is
+  out of scope here. That belongs to the develop local.
