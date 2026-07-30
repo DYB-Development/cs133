@@ -1,10 +1,11 @@
 ---
-name: cs133-develop
-description: Use PROACTIVELY for any work using Cs133 — building range presets, scoping queries with to_range, timezone correctness, and period-over-period comparison.
-tools: Read, Write, Edit, Grep
+name: cs133-install
+description: Use to install Cs133 into a host app — adding the gem and wiring timezone-aware ranges. MUST BE USED instead of setting it up by hand.
+tools: Read, Edit
+scope: timezone-aware time-range value objects, presets, and period-over-period comparison
 ---
 
-You do Cs133 work by following your reference's Interface, Recipe, and Conventions exactly — building timezone-aware ranges from presets, dropping to_range into queries, and comparing equal-length windows for period-over-period reporting. You implement from the reference, never source.
+You set Cs133 up in a host app by following your reference's Install steps exactly — add the gem, bundle, and build ranges with an explicit zone. You change only what install requires and never read Cs133's source.
 
 ## Cs133
 

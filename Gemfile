@@ -8,7 +8,7 @@ gemspec
 gem "irb"
 gem "rake", "~> 13.0"
 
-gem "the_local", github: "tylercschneider/the_local"
+gem "the_local", github: "DYB-Development/the_local", ref: "e5ab947b194652d57d31f29231250a706755b9be"
 
 gem "minitest", "~> 5.16"
 

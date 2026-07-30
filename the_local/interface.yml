@@ -1,0 +1,5 @@
+scope: timezone-aware time-range value objects, presets, and period-over-period comparison
+
+sources:
+  - lib/cs133/range.rb
+  - lib/cs133/comparison.rb
