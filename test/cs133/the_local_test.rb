@@ -2,6 +2,7 @@
 
 require "test_helper"
 require "yaml"
+require "the_local/provider_check"
 
 module Cs133
   class TheLocalTest < Minitest::Test
@@ -20,16 +21,8 @@ module Cs133
       end
     end
 
-    def test_info_local_embeds_the_current_reference
-      assert_includes File.read(File.join(AGENTS_DIR, "cs133-info.md")), Cs133::Reference.content
-    end
-
-    def test_install_local_embeds_the_current_reference
-      assert_includes File.read(File.join(AGENTS_DIR, "cs133-install.md")), Cs133::Reference.content
-    end
-
-    def test_develop_local_embeds_the_current_reference
-      assert_includes File.read(File.join(AGENTS_DIR, "cs133-develop.md")), Cs133::Reference.content
+    def test_the_locals_satisfy_the_provider_contract
+      assert_empty TheLocal::ProviderCheck.new(File.expand_path("../..", __dir__)).problems
     end
 
     def test_reference_documents_every_canonical_section

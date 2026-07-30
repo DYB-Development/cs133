@@ -1,5 +1,30 @@
 scope: timezone-aware time-range value objects, presets, and period-over-period comparison
 
+install:
+  - gem "cs133"
+  - require "cs133"
+
+develop:
+  - Cs133::Range.between
+  - Cs133::Range.this_month
+  - Cs133::Range.last_month
+  - Cs133::Range.last_7_days
+  - Cs133::Range.last_30_days
+  - Cs133::Range.year_to_date
+  - Cs133::Range.new
+  - Cs133::Range::InvalidBoundsError
+  - range.start_time
+  - range.end_time
+  - range.to_range
+  - range.length
+  - range.previous
+  - Cs133::Comparison.new
+  - comparison.current
+  - comparison.previous
+  - comparison.delta
+  - comparison.percent_change
+  - comparison.direction
+
 sources:
   - lib/cs133/range.rb
   - lib/cs133/comparison.rb
