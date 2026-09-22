@@ -34,6 +34,15 @@ module Cs133
       new(start_time: anchor.beginning_of_year, end_time: anchor)
     end
 
+    def self.last_weeks(count, zone:, now: Time.now)
+      monday = now.in_time_zone(zone).to_date.beginning_of_week(:monday)
+
+      (count - 1).downto(0).map do |weeks_back|
+        start_date = monday - weeks_back.weeks
+        between(start_date: start_date, end_date: start_date + 6, zone: zone)
+      end
+    end
+
     def self.last_n_days(count, zone:, now:)
       anchor = now.in_time_zone(zone)
       new(start_time: (anchor - (count - 1).days).beginning_of_day, end_time: anchor.end_of_day)

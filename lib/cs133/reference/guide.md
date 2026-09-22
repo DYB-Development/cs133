@@ -13,24 +13,25 @@ String (`"America/Los_Angeles"`) or an `ActiveSupport::TimeZone`; `now:` default
 to the current time and exists so callers can pin "now" in tests.
 
 ```ruby
-Cs133::Range.this_month(zone:, now: Time.now)    # => Cs133::Range spanning the current calendar month, in zone
-Cs133::Range.last_month(zone:, now: Time.now)    # => Cs133::Range spanning the previous calendar month, in zone
-Cs133::Range.last_7_days(zone:, now: Time.now)   # => Cs133::Range, 7 day-aligned days ending today, in zone
-Cs133::Range.last_30_days(zone:, now: Time.now)  # => Cs133::Range, 30 day-aligned days ending today, in zone
-Cs133::Range.year_to_date(zone:, now: Time.now)  # => Cs133::Range from the start of the year to now, in zone
-Cs133::Range.new(start_time:, end_time:)         # => Cs133::Range from explicit bounds
+Cs133::Range.this_month(zone:, now: Time.now)         # => Cs133::Range spanning the current calendar month, in zone
+Cs133::Range.last_month(zone:, now: Time.now)         # => Cs133::Range spanning the previous calendar month, in zone
+Cs133::Range.last_7_days(zone:, now: Time.now)        # => Cs133::Range, 7 day-aligned days ending today, in zone
+Cs133::Range.last_30_days(zone:, now: Time.now)       # => Cs133::Range, 30 day-aligned days ending today, in zone
+Cs133::Range.year_to_date(zone:, now: Time.now)       # => Cs133::Range from the start of the year to now, in zone
+Cs133::Range.last_weeks(count, zone:, now: Time.now)  # => Array of count Cs133::Range, Monday-to-Sunday weeks in zone, oldest first, the last holding now
+Cs133::Range.new(start_time:, end_time:)              # => Cs133::Range from explicit bounds
 
-range.start_time                                 # => Time/ActiveSupport::TimeWithZone, inclusive start
-range.end_time                                   # => Time/ActiveSupport::TimeWithZone, inclusive end
-range.to_range                                   # => (start_time..end_time), drop straight into where(...)
-range.length                                     # => Float seconds, end_time minus start_time
-range.previous                                   # => Cs133::Range, the equal-span window immediately before
+range.start_time                                      # => Time/ActiveSupport::TimeWithZone, inclusive start
+range.end_time                                        # => Time/ActiveSupport::TimeWithZone, inclusive end
+range.to_range                                        # => (start_time..end_time), drop straight into where(...)
+range.length                                          # => Float seconds, end_time minus start_time
+range.previous                                        # => Cs133::Range, the equal-span window immediately before
 
-Cs133::Comparison.new(current:, previous:)       # => Cs133::Comparison; raises UnequalLengthError unless lengths match
-comparison.current                               # => Cs133::Range, the current window
-comparison.previous                              # => Cs133::Range, the prior window
+Cs133::Comparison.new(current:, previous:)            # => Cs133::Comparison; raises UnequalLengthError unless lengths match
+comparison.current                                    # => Cs133::Range, the current window
+comparison.previous                                   # => Cs133::Range, the prior window
 
-Cs133::Comparison::UnequalLengthError            # < Cs133::Error, raised when current.length != previous.length
+Cs133::Comparison::UnequalLengthError                 # < Cs133::Error, raised when current.length != previous.length
 ```
 
 ### Recipe
@@ -84,5 +85,10 @@ filtering.
   rather than pulling `start_time`/`end_time` apart.
 - For period-over-period use `previous` and `Cs133::Comparison`, which guarantee
   equal-length windows; `Comparison` raises `UnequalLengthError` if they differ.
+- Do not use `previous` to walk a run of calendar periods. It steps back by the
+  range's length in elapsed seconds, so across a daylight saving change it lands
+  an hour out and stays out — stepping back from the week of 9 November 2026 in
+  `America/New_York` gives 26 October at 01:00 where the calendar gives 00:00.
+  Use `last_weeks`, which steps by the calendar.
 - Reach for the presets (`this_month`, `last_month`, `last_7_days`,
   `last_30_days`, `year_to_date`) before constructing a `Range` by hand.

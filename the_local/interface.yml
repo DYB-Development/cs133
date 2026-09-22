@@ -11,6 +11,7 @@ develop:
   - Cs133::Range.last_7_days
   - Cs133::Range.last_30_days
   - Cs133::Range.year_to_date
+  - Cs133::Range.last_weeks
   - Cs133::Range.new
   - Cs133::Range::InvalidBoundsError
   - range.start_time
