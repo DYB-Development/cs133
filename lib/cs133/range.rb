@@ -37,7 +37,10 @@ module Cs133
     def self.last_weeks(count, zone:, now: Time.now)
       monday = now.in_time_zone(zone).to_date.beginning_of_week(:monday)
 
-      count.times.map { between(start_date: monday, end_date: monday + 6, zone: zone) }
+      (count - 1).downto(0).map do |weeks_back|
+        start_date = monday - weeks_back.weeks
+        between(start_date: start_date, end_date: start_date + 6, zone: zone)
+      end
     end
 
     def self.last_n_days(count, zone:, now:)

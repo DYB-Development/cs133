@@ -111,5 +111,11 @@ module Cs133
 
       assert_equal 3, weeks.length
     end
+
+    def test_last_weeks_starts_a_week_earlier_for_each_step_back
+      weeks = Range.last_weeks(3, zone: "America/New_York", now: Time.utc(2026, 11, 12, 15))
+
+      assert_equal Date.new(2026, 10, 26), weeks.first.start_time.to_date
+    end
   end
 end
