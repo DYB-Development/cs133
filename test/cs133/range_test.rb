@@ -117,5 +117,11 @@ module Cs133
 
       assert_equal Date.new(2026, 10, 26), weeks.first.start_time.to_date
     end
+
+    def test_last_weeks_begins_every_week_at_midnight_across_a_daylight_saving_change
+      weeks = Range.last_weeks(4, zone: "America/New_York", now: Time.utc(2026, 11, 12, 15))
+
+      assert_equal ["00:00:00"] * 4, weeks.map { |week| week.start_time.strftime("%H:%M:%S") }
+    end
   end
 end
