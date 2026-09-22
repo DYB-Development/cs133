@@ -105,5 +105,11 @@ module Cs133
 
       assert_equal range.start_time, range.previous.end_time
     end
+
+    def test_last_weeks_returns_the_number_of_weeks_asked_for
+      weeks = Range.last_weeks(3, zone: "America/New_York", now: Time.utc(2026, 11, 12, 15))
+
+      assert_equal 3, weeks.length
+    end
   end
 end
