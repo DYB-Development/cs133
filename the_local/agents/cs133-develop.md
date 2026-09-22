@@ -1,6 +1,6 @@
 ---
 name: cs133-develop
-description: Use PROACTIVELY for building date-range filters and preset windows (this month, last month, last 7/30 days, year to date), scoping queries to a time range, and period-over-period reporting with deltas, percent change, and direction — MUST BE USED instead of hand-rolling `beginning_of_month` / `Time.now - 30.days` range math or comparing two windows by hand.
+description: Use PROACTIVELY for building date-range filters and preset windows (this month, last month, last 7/30 days, year to date), week-by-week series, scoping queries to a time range, and period-over-period reporting with deltas, percent change, and direction — MUST BE USED instead of hand-rolling `beginning_of_month` / `Time.now - 30.days` range math, walking back a week at a time, or comparing two windows by hand.
 tools: Read, Write, Edit, Grep
 scope: timezone-aware time-range value objects, presets, and period-over-period comparison
 ---
@@ -16,12 +16,13 @@ Cs133 turns a date filter into timezone-aware time-range value objects that any
 query can consume, and reports one period against another. `Cs133::Range` builds a
 window — from two dates, from a named preset, or from explicit bounds — and hands
 back an inclusive start/end pair plus the equal-length window immediately before it.
-`Cs133::Comparison` takes two already-measured numbers and reports the change
-between them. Both are plain immutable value objects with no knowledge of where the
-numbers come from.
+It also builds a run of recent whole weeks in one call. `Cs133::Comparison` takes two
+already-measured numbers and reports the change between them. Both are plain
+immutable value objects with no knowledge of where the numbers come from.
 
-Fire whenever the work involves a date-range picker, a "last 30 days" style preset,
-scoping a query to a time window, or a metric shown against its prior period.
+Fire whenever the work involves a date-range picker, a "last 30 days" style preset, a
+week-by-week chart, scoping a query to a time window, or a metric shown against its
+prior period.
 
 ## Interface
 
@@ -40,6 +41,9 @@ can pin "now" in tests.
   with today: start of 29 days ago through end of today.
 - `Cs133::Range.year_to_date(zone:, now: Time.now)` — start of the current year in
   `zone` through `now` itself; unlike the other presets this one ends mid-day.
+- `Cs133::Range.last_weeks(count, zone:, now: Time.now)` — an Array of `count` ranges,
+  each one whole Monday-through-Sunday week in `zone`. They come back oldest first,
+  and the last one is the week holding `now`.
 - `Cs133::Range.new(start_time:, end_time:)` — a range from explicit `Time`s, for the
   windows no preset covers. Applies no zone and validates nothing.
 - `Cs133::Range::InvalidBoundsError` — raised by `between` when `start_date` is after
@@ -88,14 +92,24 @@ can pin "now" in tests.
    this_period = Order.where(created_at: current.to_range).sum(:total)
    ```
 
-4. **Measure the prior period over `previous`.** It is guaranteed to be the same
+4. **For a week-by-week series, ask for the whole run at once.** `last_weeks` returns
+   every week already built, so measure each one with the same query and stop here —
+   steps 5 through 7 are the one-window-against-its-prior-period path:
+
+   ```ruby
+   weekly_totals = Cs133::Range.last_weeks(12, zone: zone).map do |week|
+     Order.where(created_at: week.to_range).sum(:total)
+   end
+   ```
+
+5. **Measure the prior period over `previous`.** It is guaranteed to be the same
    length, so the two numbers are comparable:
 
    ```ruby
    last_period = Order.where(created_at: current.previous.to_range).sum(:total)
    ```
 
-5. **Compare the two numbers.** `Comparison` takes the measurements, never the ranges:
+6. **Compare the two numbers.** `Comparison` takes the measurements, never the ranges:
 
    ```ruby
    comparison = Cs133::Comparison.new(current: this_period, previous: last_period)
@@ -105,7 +119,7 @@ can pin "now" in tests.
    comparison.direction      # => :up
    ```
 
-6. **Render defensively.** Branch on `direction` for the arrow or color, and handle a
+7. **Render defensively.** Branch on `direction` for the arrow or color, and handle a
    `nil` `percent_change` with its own case (`"—"`, `"new"`) rather than formatting it.
 
 ## Conventions
@@ -122,6 +136,11 @@ can pin "now" in tests.
   is the last resort for a window nothing else expresses.
 - Get the prior window from `previous`, not by subtracting dates yourself — that is
   what keeps the two periods equal-length and the comparison honest.
+- Use `previous` for one step back and no more. It subtracts the range's length in
+  seconds, so chaining it across a daylight saving change drifts an hour off the
+  calendar and stays off.
+- Get a run of weeks from `last_weeks` rather than from repeated `previous` calls,
+  which is what keeps every week starting at midnight.
 - Pass `now:` explicitly in tests to pin the clock; leave it out in production code.
 - Cs133 does not run queries, format numbers, or parse user input. Measuring and
   displaying stay in the consuming code.
