@@ -13,4 +13,5 @@ end
 
 require_relative "cs133/range"
 require_relative "cs133/comparison"
+require_relative "cs133/averages"
 require_relative "cs133/reference"

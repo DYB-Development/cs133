@@ -1,6 +1,6 @@
 ---
 name: cs133-develop
-description: Use PROACTIVELY for building date-range filters and preset windows (this month, last month, last 7/30 days, year to date), week-by-week series, scoping queries to a time range, and period-over-period reporting with deltas, percent change, and direction — MUST BE USED instead of hand-rolling `beginning_of_month` / `Time.now - 30.days` range math, walking back a week at a time, or comparing two windows by hand.
+description: Use PROACTIVELY for building date-range filters and preset windows (this month, last month, last 7/30 days, year to date), week-by-week series, scoping queries to a time range, and period-over-period reporting with deltas, percent change, and direction, and converting a weekly, daily, or hourly figure to a monthly or weekly one — MUST BE USED instead of hand-rolling `beginning_of_month` / `Time.now - 30.days` range math, walking back a week at a time, comparing two windows by hand, or typing `4.33`, `30.44`, or `168` into consuming code.
 tools: Read, Write, Edit, Grep
 scope: timezone-aware time-range value objects, presets, and period-over-period comparison
 ---
@@ -19,10 +19,13 @@ back an inclusive start/end pair plus the equal-length window immediately before
 It also builds a run of recent whole weeks in one call. `Cs133::Comparison` takes two
 already-measured numbers and reports the change between them. Both are plain
 immutable value objects with no knowledge of where the numbers come from.
+`Cs133::Averages` holds fixed numbers for converting an amount from one period length
+to another; they describe no particular month.
 
 Fire whenever the work involves a date-range picker, a "last 30 days" style preset, a
-week-by-week chart, scoping a query to a time window, or a metric shown against its
-prior period.
+week-by-week chart, scoping a query to a time window, a metric shown against its
+prior period, or turning a weekly, daily, or hourly amount into a monthly or weekly
+one.
 
 ## Interface
 
@@ -61,6 +64,11 @@ can pin "now" in tests.
 - `comparison.percent_change` — the change as a fraction of `previous` (`0.2` means
   +20%). Returns `nil` when `previous` is zero — handle that before formatting.
 - `comparison.direction` — `:up`, `:down`, or `:flat`.
+- `Cs133::Averages::WEEKS_IN_A_MONTH` — `4.33` (Float), the average number of weeks
+  in a month.
+- `Cs133::Averages::DAYS_IN_A_MONTH` — `30.44` (Float), the average number of days in
+  a month.
+- `Cs133::Averages::HOURS_IN_A_WEEK` — `168` (Integer), the number of hours in a week.
 
 ## How to use it
 
@@ -122,6 +130,18 @@ can pin "now" in tests.
 7. **Render defensively.** Branch on `direction` for the arrow or color, and handle a
    `nil` `percent_change` with its own case (`"—"`, `"new"`) rather than formatting it.
 
+8. **To convert an amount between period lengths, use `Cs133::Averages`.** This is a
+   separate path from steps 2 through 7 and needs no zone. First ask the developer
+   whether the figure should describe an average month or one real month. An average
+   month uses the constants; one real month is measured over a `Range` from step 2
+   instead.
+
+   ```ruby
+   monthly = weekly_total * Cs133::Averages::WEEKS_IN_A_MONTH
+   daily   = monthly_total / Cs133::Averages::DAYS_IN_A_MONTH
+   hourly  = weekly_total / Cs133::Averages::HOURS_IN_A_WEEK.to_f
+   ```
+
 ## Conventions
 
 - Always pass an explicit `zone:`. Timezone correctness is the whole point; a range
@@ -141,6 +161,12 @@ can pin "now" in tests.
   calendar and stays off.
 - Get a run of weeks from `last_weeks` rather than from repeated `previous` calls,
   which is what keeps every week starting at midnight.
+- Reference the `Cs133::Averages` constants by name rather than typing their values.
+- Convert through one constant per step. `WEEKS_IN_A_MONTH * 7` is not
+  `DAYS_IN_A_MONTH`, so going from weeks to days through a month gives a different
+  number from multiplying by 7.
+- `HOURS_IN_A_WEEK` is an Integer, so divide by it with a Float (`.to_f`) or an
+  integer amount loses its remainder.
 - Pass `now:` explicitly in tests to pin the clock; leave it out in production code.
 - Cs133 does not run queries, format numbers, or parse user input. Measuring and
   displaying stay in the consuming code.

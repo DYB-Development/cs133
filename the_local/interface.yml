@@ -25,7 +25,11 @@ develop:
   - comparison.delta
   - comparison.percent_change
   - comparison.direction
+  - Cs133::Averages::WEEKS_IN_A_MONTH
+  - Cs133::Averages::DAYS_IN_A_MONTH
+  - Cs133::Averages::HOURS_IN_A_WEEK
 
 sources:
   - lib/cs133/range.rb
   - lib/cs133/comparison.rb
+  - lib/cs133/averages.rb

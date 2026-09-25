@@ -32,6 +32,10 @@ comparison.current                                    # => Cs133::Range, the cur
 comparison.previous                                   # => Cs133::Range, the prior window
 
 Cs133::Comparison::UnequalLengthError                 # < Cs133::Error, raised when current.length != previous.length
+
+Cs133::Averages::WEEKS_IN_A_MONTH                     # => 4.33, average weeks in a month, weekly amount to monthly and back
+Cs133::Averages::DAYS_IN_A_MONTH                      # => 30.44, average days in a month, daily amount to monthly and back
+Cs133::Averages::HOURS_IN_A_WEEK                      # => 168, hours in a week
 ```
 
 ### Recipe
@@ -92,3 +96,8 @@ filtering.
   Use `last_weeks`, which steps by the calendar.
 - Reach for the presets (`this_month`, `last_month`, `last_7_days`,
   `last_30_days`, `year_to_date`) before constructing a `Range` by hand.
+- `Cs133::Averages` holds fixed averages, not values derived from a real date
+  range. Use them to turn a weekly or daily amount into a monthly one and back.
+  When the answer depends on an actual month, measure a `Range` instead.
+- `WEEKS_IN_A_MONTH` is 4.33 and `DAYS_IN_A_MONTH` is 30.44, kept as they are
+  rather than worked out from one year length, so 4.33 times 7 is not 30.44.

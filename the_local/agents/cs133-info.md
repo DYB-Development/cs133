@@ -1,6 +1,6 @@
 ---
 name: cs133-info
-description: Use to learn what Cs133 offers — timezone-aware time ranges, its presets, runs of whole weeks, and period-over-period comparison.
+description: Use to learn what Cs133 offers — timezone-aware time ranges, its presets, runs of whole weeks, period-over-period comparison, and calendar averages.
 tools: Read
 scope: timezone-aware time-range value objects, presets, and period-over-period comparison
 ---
@@ -30,7 +30,8 @@ locals:
 
 - **`cs133-install`** owns getting the gem into a host and loaded.
 - **`cs133-develop`** owns everything you call — building ranges, the presets,
-  the query-ready bounds, and comparison. It carries the exact signatures.
+  the query-ready bounds, comparison, and the calendar averages. It carries the
+  exact signatures.
 
 Do not reconstruct those calls from here; this local deliberately does not carry
 them.
@@ -74,5 +75,11 @@ time.
   a current and a previous, not over the ranges themselves. It reports the change
   between them: the raw difference, the proportional change, and whether it moved
   up, down, or stayed flat. You query each range first, then compare the results.
+- The proportional change is a fraction, not a percentage — a quarter more is
+  0.25 — and there is none when the previous number is zero.
+- The **calendar averages** are fixed numbers for converting a figure from one
+  period to another: about 4.33 weeks and 30.44 days in an average month, and 168
+  hours in a week. They describe no particular month, so they scale a rate, while
+  a range gives the real bounds of a real month.
 - Building a range from two dates rejects an inverted pair with an error;
   building one from explicit times validates nothing.
